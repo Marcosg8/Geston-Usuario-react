@@ -173,6 +173,11 @@ function App() {
     setActiveTab('editar');
   };
 
+  const handleListTab = () => {
+    setActiveTab('listar');
+    resetForm();
+  };
+
   return (
     <>
       <div className="hyperspeed-background" aria-hidden="true">
@@ -196,143 +201,160 @@ function App() {
             </div>
             <div className="stat-card">
               <span className="stat-label">Modo</span>
-              <strong className="stat-value">{activeTab === 'editar' ? 'Editando' : 'Creando'}</strong>
+              <strong className="stat-value">
+                {activeTab === 'editar'
+                  ? 'Editando'
+                  : activeTab === 'listar'
+                    ? 'Listando'
+                    : 'Creando'}
+              </strong>
             </div>
           </div>
 
           {error && <div className="error">{error}</div>}
           {success && <div className="success">{success}</div>}
 
-          {/* Form Section */}
-          <div className="form-section">
-            <div className="tabs-row">
-              <button
-                type="button"
-                className={`tab-btn ${activeTab === 'crear' ? 'active' : ''}`}
-                onClick={handleCreateTab}
-              >
-                Crear
-              </button>
-              <button
-                type="button"
-                className={`tab-btn ${activeTab === 'editar' ? 'active' : ''}`}
-                onClick={handleEditTab}
-              >
-                Editar
-              </button>
-            </div>
-
-            <h2>{activeTab === 'editar' ? 'Editar Usuario' : 'Nuevo Usuario'}</h2>
-            {activeTab === 'editar' && !isEditing && (
-              <div className="tab-hint">Selecciona un usuario en la tabla y pulsa “Editar”.</div>
-            )}
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>Nombre:</label>
-                <input
-                  type="text"
-                  name="nombre"
-                  value={formData.nombre}
-                  onChange={handleInputChange}
-                  placeholder="Ingresa el nombre completo"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Correo:</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="Ingresa el correo electrónico"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Edad:</label>
-                <input
-                  type="number"
-                  name="edad"
-                  value={formData.edad}
-                  onChange={handleInputChange}
-                  placeholder="Ingresa la edad"
-                  min="1"
-                  max="120"
-                  required
-                />
-              </div>
-              <div className="button-row">
-                <button type="submit" className="btn-submit" disabled={activeTab === 'editar' && !isEditing}>
-                  {activeTab === 'editar'
-                    ? isEditing
-                      ? 'Actualizar Usuario'
-                      : 'Selecciona un usuario'
-                    : 'Crear Usuario'}
-                </button>
-                {activeTab === 'editar' && (
-                  <button
-                    type="button"
-                    className="btn-cancel"
-                    onClick={() => {
-                      resetForm();
-                      setActiveTab('crear');
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                )}
-              </div>
-            </form>
+          <div className="tabs-row">
+            <button
+              type="button"
+              className={`tab-btn ${activeTab === 'crear' ? 'active' : ''}`}
+              onClick={handleCreateTab}
+            >
+              Crear
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${activeTab === 'editar' ? 'active' : ''}`}
+              onClick={handleEditTab}
+            >
+              Editar
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${activeTab === 'listar' ? 'active' : ''}`}
+              onClick={handleListTab}
+            >
+              Listar
+            </button>
           </div>
+
+          {/* Form Section */}
+          {activeTab !== 'listar' && (
+            <div className="form-section">
+              <h2>{activeTab === 'editar' ? 'Editar Usuario' : 'Nuevo Usuario'}</h2>
+              {activeTab === 'editar' && !isEditing && (
+                <div className="tab-hint">Ve a “Listar”, elige un usuario y pulsa “Editar”.</div>
+              )}
+              <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                  <label>Nombre:</label>
+                  <input
+                    type="text"
+                    name="nombre"
+                    value={formData.nombre}
+                    onChange={handleInputChange}
+                    placeholder="Ingresa el nombre completo"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Correo:</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="Ingresa el correo electrónico"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Edad:</label>
+                  <input
+                    type="number"
+                    name="edad"
+                    value={formData.edad}
+                    onChange={handleInputChange}
+                    placeholder="Ingresa la edad"
+                    min="1"
+                    max="120"
+                    required
+                  />
+                </div>
+                <div className="button-row">
+                  <button type="submit" className="btn-submit" disabled={activeTab === 'editar' && !isEditing}>
+                    {activeTab === 'editar'
+                      ? isEditing
+                        ? 'Actualizar Usuario'
+                        : 'Selecciona un usuario'
+                      : 'Crear Usuario'}
+                  </button>
+                  {activeTab === 'editar' && (
+                    <button
+                      type="button"
+                      className="btn-cancel"
+                      onClick={() => {
+                        resetForm();
+                        setActiveTab('crear');
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+          )}
 
           {/* Users List Section */}
-          <div className="list-section">
-            <h2>Lista de Usuarios</h2>
-            {loading ? (
-              <div className="loading">Cargando usuarios...</div>
-            ) : usuarios.length === 0 ? (
-              <div className="empty-state">No hay usuarios registrados</div>
-            ) : (
-              <table className="user-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Correo</th>
-                    <th>Edad</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {usuarios.map((usuario) => (
-                    <tr key={usuario.id}>
-                      <td>{usuario.id}</td>
-                      <td>{usuario.nombre}</td>
-                      <td>{usuario.email}</td>
-                      <td>{usuario.edad}</td>
-                      <td>
-                        <button
-                          className="btn-edit"
-                          onClick={() => handleEdit(usuario)}
-                          title="Editar usuario"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          className="btn-delete"
-                          onClick={() => handleDelete(usuario.id)}
-                          title="Eliminar usuario"
-                        >
-                          Eliminar
-                        </button>
-                      </td>
+          {activeTab === 'listar' && (
+            <div className="list-section">
+              <h2>Lista de Usuarios</h2>
+              {loading ? (
+                <div className="loading">Cargando usuarios...</div>
+              ) : usuarios.length === 0 ? (
+                <div className="empty-state">No hay usuarios registrados</div>
+              ) : (
+                <table className="user-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nombre</th>
+                      <th>Correo</th>
+                      <th>Edad</th>
+                      <th>Acciones</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+                  </thead>
+                  <tbody>
+                    {usuarios.map((usuario) => (
+                      <tr key={usuario.id}>
+                        <td>{usuario.id}</td>
+                        <td>{usuario.nombre}</td>
+                        <td>{usuario.email}</td>
+                        <td>{usuario.edad}</td>
+                        <td>
+                          <button
+                            className="btn-edit"
+                            onClick={() => handleEdit(usuario)}
+                            title="Editar usuario"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            className="btn-delete"
+                            onClick={() => handleDelete(usuario.id)}
+                            title="Eliminar usuario"
+                          >
+                            Eliminar
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </>
