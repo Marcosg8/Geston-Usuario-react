@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Hyperspeed from './Hyperspeed';
+import { hyperspeedPresets } from './HyperSpeedPresets';
 import './App.css';
 
 const API_URL = 'http://localhost:5000/api/usuarios';
@@ -21,6 +23,7 @@ function App() {
     edad: ''
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState('crear');
 
   // Load users on component mount
   useEffect(() => {
@@ -38,7 +41,7 @@ function App() {
       setUsuarios(Array.isArray(users) ? users : []);
       setError('');
     } catch (err) {
-      setError('Error loading users. Please ensure the server is running.');
+      setError('Error al cargar usuarios. Asegúrate de que el servidor esté en ejecución.');
       console.error('Fetch error:', err);
     } finally {
       setLoading(false);
@@ -63,42 +66,48 @@ function App() {
    */
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (activeTab === 'editar' && !isEditing) {
+      setError('Selecciona un usuario desde la tabla para editarlo');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
     
     if (!formData.nombre || !formData.email || !formData.edad) {
-      setError('Please complete all fields');
+      setError('Por favor, completa todos los campos');
       setTimeout(() => setError(''), 3000);
       return;
     }
 
     const userAge = parseInt(formData.edad);
     if (isNaN(userAge) || userAge < 1 || userAge > 120) {
-      setError('Age must be between 1 and 120');
+      setError('La edad debe estar entre 1 y 120');
       setTimeout(() => setError(''), 3000);
       return;
     }
 
     try {
-      if (isEditing) {
+      if (activeTab === 'editar') {
         await axios.put(`${API_URL}/${formData.id}`, {
           nombre: formData.nombre,
           email: formData.email,
           edad: userAge
         });
-        setSuccess('User updated successfully');
+        setSuccess('Usuario actualizado correctamente');
       } else {
         await axios.post(API_URL, {
           nombre: formData.nombre,
           email: formData.email,
           edad: userAge
         });
-        setSuccess('User created successfully');
+        setSuccess('Usuario creado correctamente');
       }
       
       resetForm();
       fetchUsuarios();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Error saving user';
+      const errorMessage = err.response?.data?.error || 'Error al guardar el usuario';
       setError(errorMessage);
       console.error('Save error:', err);
       setTimeout(() => setError(''), 5000);
@@ -117,6 +126,7 @@ function App() {
       edad: usuario.edad
     });
     setIsEditing(true);
+    setActiveTab('editar');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -125,14 +135,14 @@ function App() {
    * @param {number} id - User ID to delete
    */
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
+    if (window.confirm('¿Seguro que quieres eliminar este usuario?')) {
       try {
         await axios.delete(`${API_URL}/${id}`);
-        setSuccess('User deleted successfully');
+        setSuccess('Usuario eliminado correctamente');
         fetchUsuarios();
         setTimeout(() => setSuccess(''), 3000);
       } catch (err) {
-        const errorMessage = err.response?.data?.error || 'Error deleting user';
+        const errorMessage = err.response?.data?.error || 'Error al eliminar el usuario';
         setError(errorMessage);
         console.error('Delete error:', err);
         setTimeout(() => setError(''), 5000);
@@ -154,116 +164,178 @@ function App() {
     setError('');
   };
 
+  const handleCreateTab = () => {
+    setActiveTab('crear');
+    resetForm();
+  };
+
+  const handleEditTab = () => {
+    setActiveTab('editar');
+  };
+
   return (
-    <div className="App">
-      <div className="header">
-        <h1>User Management</h1>
-        <p>Administration System</p>
+    <>
+      <div className="hyperspeed-background" aria-hidden="true">
+        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+          <Hyperspeed effectOptions={hyperspeedPresets.one} />
+        </div>
       </div>
 
-      <div className="container">
-        {error && <div className="error">{error}</div>}
-        {success && <div className="success">{success}</div>}
+      <div className="App">
+        <header className="header">
+          <div className="header-badge">React CRUD</div>
+          <h1>Gestión de Usuarios</h1>
+          <p>Panel de administración moderno con operaciones CRUD en tiempo real</p>
+        </header>
 
-        {/* Form Section */}
-        <div className="form-section">
-          <h2>{isEditing ? 'Edit User' : 'New User'}</h2>
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>Name:</label>
-              <input
-                type="text"
-                name="nombre"
-                value={formData.nombre}
-                onChange={handleInputChange}
-                placeholder="Enter full name"
-                required
-              />
+        <div className="container">
+          <div className="top-stats">
+            <div className="stat-card">
+              <span className="stat-label">Total de Usuarios</span>
+              <strong className="stat-value">{usuarios.length}</strong>
             </div>
-            <div className="form-group">
-              <label>Email:</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Enter email address"
-                required
-              />
+            <div className="stat-card">
+              <span className="stat-label">Modo</span>
+              <strong className="stat-value">{activeTab === 'editar' ? 'Editando' : 'Creando'}</strong>
             </div>
-            <div className="form-group">
-              <label>Age:</label>
-              <input
-                type="number"
-                name="edad"
-                value={formData.edad}
-                onChange={handleInputChange}
-                placeholder="Enter age"
-                min="1"
-                max="120"
-                required
-              />
-            </div>
-            <button type="submit" className="btn-submit">
-              {isEditing ? 'Update User' : 'Create User'}
-            </button>
-            {isEditing && (
-              <button type="button" className="btn-cancel" onClick={resetForm}>
-                Cancel
+          </div>
+
+          {error && <div className="error">{error}</div>}
+          {success && <div className="success">{success}</div>}
+
+          {/* Form Section */}
+          <div className="form-section">
+            <div className="tabs-row">
+              <button
+                type="button"
+                className={`tab-btn ${activeTab === 'crear' ? 'active' : ''}`}
+                onClick={handleCreateTab}
+              >
+                Crear
               </button>
-            )}
-          </form>
-        </div>
+              <button
+                type="button"
+                className={`tab-btn ${activeTab === 'editar' ? 'active' : ''}`}
+                onClick={handleEditTab}
+              >
+                Editar
+              </button>
+            </div>
 
-        {/* Users List Section */}
-        <div className="list-section">
-          <h2>Users List</h2>
-          {loading ? (
-            <div className="loading">Loading users...</div>
-          ) : usuarios.length === 0 ? (
-            <div className="empty-state">No users registered</div>
-          ) : (
-            <table className="user-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Age</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {usuarios.map((usuario) => (
-                  <tr key={usuario.id}>
-                    <td>{usuario.id}</td>
-                    <td>{usuario.nombre}</td>
-                    <td>{usuario.email}</td>
-                    <td>{usuario.edad}</td>
-                    <td>
-                      <button 
-                        className="btn-edit" 
-                        onClick={() => handleEdit(usuario)}
-                        title="Edit user"
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        className="btn-delete" 
-                        onClick={() => handleDelete(usuario.id)}
-                        title="Delete user"
-                      >
-                        Delete
-                      </button>
-                    </td>
+            <h2>{activeTab === 'editar' ? 'Editar Usuario' : 'Nuevo Usuario'}</h2>
+            {activeTab === 'editar' && !isEditing && (
+              <div className="tab-hint">Selecciona un usuario en la tabla y pulsa “Editar”.</div>
+            )}
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>Nombre:</label>
+                <input
+                  type="text"
+                  name="nombre"
+                  value={formData.nombre}
+                  onChange={handleInputChange}
+                  placeholder="Ingresa el nombre completo"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Correo:</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="Ingresa el correo electrónico"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Edad:</label>
+                <input
+                  type="number"
+                  name="edad"
+                  value={formData.edad}
+                  onChange={handleInputChange}
+                  placeholder="Ingresa la edad"
+                  min="1"
+                  max="120"
+                  required
+                />
+              </div>
+              <div className="button-row">
+                <button type="submit" className="btn-submit" disabled={activeTab === 'editar' && !isEditing}>
+                  {activeTab === 'editar'
+                    ? isEditing
+                      ? 'Actualizar Usuario'
+                      : 'Selecciona un usuario'
+                    : 'Crear Usuario'}
+                </button>
+                {activeTab === 'editar' && (
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={() => {
+                      resetForm();
+                      setActiveTab('crear');
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+
+          {/* Users List Section */}
+          <div className="list-section">
+            <h2>Lista de Usuarios</h2>
+            {loading ? (
+              <div className="loading">Cargando usuarios...</div>
+            ) : usuarios.length === 0 ? (
+              <div className="empty-state">No hay usuarios registrados</div>
+            ) : (
+              <table className="user-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Edad</th>
+                    <th>Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                </thead>
+                <tbody>
+                  {usuarios.map((usuario) => (
+                    <tr key={usuario.id}>
+                      <td>{usuario.id}</td>
+                      <td>{usuario.nombre}</td>
+                      <td>{usuario.email}</td>
+                      <td>{usuario.edad}</td>
+                      <td>
+                        <button
+                          className="btn-edit"
+                          onClick={() => handleEdit(usuario)}
+                          title="Editar usuario"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          className="btn-delete"
+                          onClick={() => handleDelete(usuario.id)}
+                          title="Eliminar usuario"
+                        >
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
