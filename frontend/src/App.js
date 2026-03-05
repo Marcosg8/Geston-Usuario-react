@@ -24,6 +24,18 @@ function App() {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('crear');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredUsuarios = usuarios.filter((usuario) => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return true;
+
+    return (
+      usuario.nombre?.toLowerCase().includes(query) ||
+      usuario.email?.toLowerCase().includes(query) ||
+      String(usuario.edad).includes(query)
+    );
+  });
 
   // Load users on component mount
   useEffect(() => {
@@ -310,10 +322,21 @@ function App() {
           {activeTab === 'listar' && (
             <div className="list-section">
               <h2>Lista de Usuarios</h2>
+              <div className="form-group">
+                <label>Buscar:</label>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar por nombre, correo o edad"
+                />
+              </div>
               {loading ? (
                 <div className="loading">Cargando usuarios...</div>
               ) : usuarios.length === 0 ? (
                 <div className="empty-state">No hay usuarios registrados</div>
+              ) : filteredUsuarios.length === 0 ? (
+                <div className="empty-state">No se encontraron usuarios con esa búsqueda</div>
               ) : (
                 <table className="user-table">
                   <thead>
@@ -326,7 +349,7 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {usuarios.map((usuario) => (
+                    {filteredUsuarios.map((usuario) => (
                       <tr key={usuario.id}>
                         <td>{usuario.id}</td>
                         <td>{usuario.nombre}</td>
